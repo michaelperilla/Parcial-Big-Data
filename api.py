@@ -1,20 +1,27 @@
-import matplotlib.pyplot as plt
+import requests
 from pymongo import MongoClient
 
-## conexion a mongodb
+# Conexion a MongoDB
 client = MongoClient("mongodb://localhost:27017/")
 db = client["anime_db"]
-collection = db["top_anime"]
-animes = collection.find({}, {"_id": 0, "titulo": 1, "puntuacion": 1})
-## fin conexion a mongodb
+collection = db["top_anime"] 
+url = "https://api.jikan.moe/v4/top/anime"
+data = requests.get(url)
+# fin Conexion a MongoDB
 
-# Extraer títulos y puntuaciones
-titulos = []
-puntuaciones = []
-##busca 
-for anime in animes:
-    titulos.append(anime["titulo"])
-    puntuaciones.append(anime["puntuacion"])
+if data.status_code == 200:
+    anime_data = data.json()["data"]
+    for anime in anime_data:
+        anime_doc = {
+            "titulo": anime["title"],
+            "puntuacion": anime["score"],
+            "episodios": anime["episodes"],
+        }
+        collection.insert_one(anime_doc)
+
+    print("Conexion exitosa...")
+else:
+    print("No se pudo conectar...")
 
 ##grafica
 titulos = titulos[:20]
@@ -26,5 +33,6 @@ plt.ylabel("Titulo de Anime")
 plt.grid(axis='x', linestyle='--', alpha=0.7)
 plt.show()
 ##fin grafica
+
 
 
